@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="manifest" href="./manifest2.json">
+    <title>HTML5 Create HTML5 Canvas JavaScript Drawing App Example</title>
+    <script type="text/javascript" src="jquery-3.6.4.min.js"></script>
+
+    <!--[if IE]><script type="text/javascript" src="excanvas.js"></script><![endif]-->
+    <script type="text/javascript" src="bumblebee.js"></script>
+    <style>
+      .centered {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      }
+     
+      div.fixed {
+      position: fixed;
+      top: 0;
+      left: 0;
+      margin:0;
+      padding:0;
+      width: 100%;
+      height: 100%;
+      }
+      button.button {
+      font-size:3vmin;
+      }
+      .controls
+{
+      bottom: 0;
+      left: 0;
+      position: absolute;
+      width: 100%;
+      visibility:visible;
+      }
+    
+</style>
+
+  </head>
+  <body style="background-color:#52d1ed;">
+<!--    <button id="buttonColors" class="button" onclick="redrawInterface('colorpicker');">Select Colours</button>
+    <button  class="button" onclick="redrawInterface('canvas');">Draw on Canvas</button>
+    -->
+<div class="fixed" id="canvasDiv" style="visibility:visible;touch-action: none;"></div>
+    <div class="fixed" id="colorMenuDiv" style="visibility:hidden;overflow-y:scroll ;touch-action: pan-y;background-color:#52d1ed;"></div>
+    <script type="text/javascript"> $(document).ready(function() {
+    	 prepareCanvas();
+      });</script>
+
+
+
+</div>
+</div>
+
+  </body>
+
+</html>

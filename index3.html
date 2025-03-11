@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+      <title>Haptic Sketch</title>
+       <script type="text/javascript" src="jquery-3.6.4.min.js"></script>
+
+    <!--[if IE]><script type="text/javascript" src="excanvas.js"></script><![endif]-->
+    <script type="text/javascript" src="html5-canvas-drawing-app3.js"></script>
+<script language="javascript" src="lz-string.min.js"></script> 
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <meta name="description" content="Text Editor - Demo for the HTML5 File System Access.">
+        <link rel="canonical" href="https://googlechromelabs.github.io/text-editor/">
+        <link rel="manifest" href="./manifest.json">
+        <link rel="icon" type="image/png" href="./images/favicon.png">
+        <meta name="theme-color" content="#1a237e">
+        <link rel="apple-touch-icon" sizes="192x192" href="./images/icon-192.png">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="application-name" content="Text Edit">
+        <meta name="msapplication-TileImage" content="./images/icon-144.png">
+        <meta name="msapplication-TileColor" content="#1a237e">
+        <meta name="msapplication-tap-highlight" content="no">
+        <meta name="twitter:card" content="summary">
+        <meta name="twitter:url" content="https://googlechromelabs.github.io/text-editor/">
+        <meta name="twitter:title" content="Text Editor">
+        <meta name="twitter:description" content="Text Editor - Demo for the HTML5 File System Access API.">
+        <meta name="twitter:image" content="./images/icon-192.png">
+        <meta name="twitter:creator" content="@petele">
+        <meta property="og:title" content="Text Editor">
+        <meta property="og:type" content="website">
+        <meta property="og:image" content="./images/icon-192.png">
+        <meta property="og:url" content="https://googlechromelabs.github.io/text-editor/">
+        <meta property="og:description" content="Text Editor - Demo for the HTML5 File System Access API.">
+        <script>
+            "use strict";
+            window.ga = window.ga || function() {
+                (ga.q = ga.q || []).push(arguments)
+            }
+            ,
+            ga.l = +new Date,
+            window.addEventListener("DOMContentLoaded", ()=>{
+                location.hostname
+            }
+            );
+        </script>
+        <style>
+	  .centered {
+	  position: fixed;
+	  top: 50%;
+	  left: 50%;
+	  transform: translate(-50%, -50%);
+	  }
+     
+	  div.fixedL {
+	  position: fixed;
+	  top: 0px;
+	  left: 0;
+	  margin:0;
+	  padding:0;
+	  width: 30%;
+	  height: 100%;
+
+	  }
+	  div.fixed {
+	  position: fixed;
+	  top: 0px;
+	  left: 0;
+	  margin:0;
+	  padding:0;
+	  width: 100%;
+	  height: 100%;
+	  }
+	  div.fixedR {
+	  position: fixed;
+	  top: 0px;
+	  right: 0px;
+	  margin:0;
+	  padding:0;
+	  width: 70%;
+	  height: 100%;
+	  }
+	  div.fixedT {
+	  position: fixed;
+	  top: 0px;
+	  left: 0px;
+	  margin:0;
+	  padding:0;
+	  height: 30%;
+	  width: 100%;
+	  }
+	  div.fixedB {
+	  position: fixed;
+	  bottom: 0px;
+	  left: 0px;
+	  margin:0;
+	  padding:0;
+	  width: 100%;
+	  height: 70%;
+	  }
+
+
+	  button.button {
+	  font-size:3vmin;
+	  }
+	  .menubar{
+	  position: fixed;
+	  top: 0px;
+	  left: 0;
+	  margin:0;
+	  padding:0;
+	  width: 100%;
+	  height: 100%;
+	  
+	  }
+
+	   .controls
+{
+      bottom: 0;
+      left: 0;
+      position: absolute;
+      width: 100%;
+      visibility:visible;
+	  }
+      .button {
+      font-size:3vmin;
+      }
+ 
+        </style>
+        <style>
+            @media screen and (display-mode:standalone) {
+                header #butClose {
+                    display: block
+                }
+
+                header #butInstall,header h1 {
+                    display: none
+                }
+            }
+        </style>
+        <style media="print">
+            .footer,header {
+                display: none
+            }
+
+            textarea {
+                border: 0
+            }
+        </style>
+    </head>
+<body  style="background-color:#52d1ed;">
+
+    <div class="fixedR" id="canvasDiv" style="visibility:visible;touch-action: pinch-zoom;overflow:auto;"></div>
+  <div class="fixedL" id="toolsDiv" style="visibility:visible;touch-action: none;"></div>
+    <div class="fixed" id="colorMenuDiv" style="visibility:hidden;overflow-y:scroll ;touch-action: pan-y;background-color:#fff;"></div>
+    <script type="text/javascript"> $(document).ready(function() {
+    	 prepareCanvas();
+      });</script>
+    <header>
+      <div class="controls">
+                        <button id="butNew" class="button" type="button" role="menuitem">
+                            New
+                        </button>
+                        <button id="butOpen" class="button" type="button" role="menuitem">
+                            Open
+                        </button>
+                        <button id="butSave" class="button" type="button" role="menuitem">
+                            Save
+                        </button>
+                        <button id="butSaveAs" class="button" type="button" role="menuitem">
+                            Save As
+                        </button>
+</div>
+        </header>
+    
+
+
+
+
+    <div id="not-supported" style="visibility:hidden">
+      <a id="aDownloadFile" download></a>
+        <input type="file" id="filePicker">
+       <span id="headerFileName">Text Editor</span>
+                <span id="modifiedHeader" class="hidden">*</span>
+                <span id="headerAppName" class="hidden">- Text Editor</span>
+    </div>
+    <div id="lblLegacyFS"  style="visibility:none"></div>
+        </details>
+
+        <script>
+            "use strict";
+            function gaEvent(n, e, t, a, o) {
+                if ("localhost" === location.hostname)
+                    return;
+                const i = {
+                    eventCategory: n,
+                    eventAction: e
+                };
+                t && (i.eventLabel = t),
+                a && (i.eventValue = a),
+                o && (i.nonInteraction = !0),
+                window.ga && window.ga("send", "event", i)
+            }
+            function gaTiming(n, e, t, a) {
+                t = parseInt(t, 10),
+                "localhost" !== location.hostname && window.ga && window.ga("send", "timing", n, e, t, a)
+            }
+            window.addEventListener("load", ()=>{
+                setTimeout(()=>{
+                    let n = "browser";
+                    !0 === window.navigator.standalone ? n = "standalone-ios" : !0 === matchMedia("(display-mode: standalone)").matches && (n = "standalone"),
+                    gaEvent("Window Style", n, null, null, !0)
+                }
+                , 3100)
+            }
+            ),
+            window.addEventListener("load", ()=>{
+                if ("performance"in window) {
+                    gaTiming("Start", "window-load", Math.round(performance.now())),
+                    setTimeout(()=>{
+                        const n = performance.getEntriesByType("paint");
+                        n && n.length > 0 && n.forEach(n=>{
+                            gaTiming("Start", n.name, Math.round(n.startTime + n.duration))
+                        }
+                        )
+                    }
+                    , 3e3)
+                }
+            }
+            ),
+            window.addEventListener("DOMContentLoaded", ()=>{
+                if ("performance"in window) {
+                    gaTiming("Start", "dom-content-loaded", Math.round(performance.now()))
+                }
+                window.ga && window.ga("send", "pageview", "/")
+            }
+            ),
+            window.addEventListener("load", ()=>{
+                gaEvent("App Version", "0.0.13", null, null, !0)
+            }
+            ),
+            document.addEventListener("visibilitychange", n=>{
+                gaEvent("Page Visibility", !0 === document.hidden ? "hidden" : "visible", null, null, !0)
+            }
+            );
+        </script>
+
+
+
+	<script>
+          "use strict";
+	  var dataarr=[];
+	  var compressed="";
+	  var uncompressed="";
+	  var canvasWidthLoad=0;
+	  var canvasHeightLoad=0;
+	  var newScale=1;
+	  var newScaleW=1;
+	  var newScaleH=1;
+            const app = {
+                appName: "Haptic Sketch",
+                file: {
+                    handle: null,
+                    name: null,
+                    isModified: !1
+                },
+                hasFSAccess: "chooseFileSystemEntries"in window || "showOpenFilePicker"in window,
+                isMac: navigator.userAgent.includes("Mac OS X")
+            };
+            app.hasFSAccess ? (document.getElementById("not-supported").classList.add("hidden"),
+          gaEvent("File System APIs", "FSAccess")) : (document.getElementById("lblLegacyFS").classList.toggle("hidden", !1),
+            document.getElementById("butSave").classList.toggle("hidden", !0),
+            gaEvent("File System APIs", "Legacy")),
+            app.newFile = ()=>{
+                app.confirmDiscard() && (newCanvas(),
+                app.setFile(),
+                app.setModified(!1),
+            //app.setFocus(!0),
+                gaEvent("FileAction", "New"))
+            }
+            ,
+            app.openFile = async e=>{
+                if (!app.confirmDiscard())
+                    return;
+                if (!app.hasFSAccess) {
+                    gaEvent("FileAction", "Open", "Legacy");
+                    const e = await app.getFileLegacy();
+                    return void (e && app.readFile(e))
+                }
+                if (e) {
+                    if (gaEvent("FileAction", "OpenRecent", "FSAccess"),
+                    !1 === await verifyPermission(e, !0))
+                        return
+                } else {
+                    gaEvent("FileAction", "Open", "FSAccess");
+                    try {
+                        e = await getFileHandle()
+                    } catch (e) {
+                        if ("AbortError" === e.name)
+                            return;
+                        gaEvent("Error", "FileOpen", e.name),
+                        alert("An error occured trying to open the file.")
+                    }
+                }
+                if (!e)
+                    return;
+                const a = await e.getFile();
+                app.readFile(a, e)
+            }
+            ,
+            app.readFile = async(e,a)=>{
+            try {
+	    pixelTexture={},
+	    uncompressed=LZString.decompressFromUTF16(await readFile(e)),
+                    app.setFile(a || e.name),
+            app.setModified(!1),
+          	  console.log ("error=" + e.name + " a=" + uncompressed ),
+	  dataarr=JSON.parse(uncompressed)
+	  } catch (e) {
+	  console.log(pixelTexture);
+          gaEvent("Error", "FileRead", e.name);
+          //const a = `An error occured reading ${app.fileName}`;
+	  console.log ("error=" + e.name + " a=" + uncompressed );
+	  
+          alert(a +e);
+          }
+	  pixelTexture=dataarr[0]; clickX=dataarr[1]; clickY=dataarr[2]; clickColor=dataarr[3]; clickSize=dataarr[4]; clickTool=dataarr[5]; clickDrag=dataarr[6];
+	  canvasWidthLoad=dataarr[7]; canvasHeightLoad=dataarr[8];
+	  console.log("old dim (W/H):"+canvasWidth+"; "+canvasHeight);
+	  console.log("loaded dim (W/H):"+canvasWidthLoad+"; "+canvasHeightLoad);
+	  canvasWidth=Math.max(canvasWidthLoad,canvasWidth);
+	  canvasHeight=Math.max(canvasHeightLoad,canvasHeight);
+	  console.log("new dim (W/H):"+canvasWidth+"; "+canvasHeight);
+	  drawingAreaWidth = canvasWidth-20;
+	  drawingAreaHeight = canvasHeight-20;
+	  canvasDiv.style.overflowY="scroll";
+	  canvasDiv.style.overflowX="scroll";
+
+	  
+	  canvas.setAttribute('width', canvasWidth+10);
+	  canvas.setAttribute('height', canvasHeight);
+	  if(orient=="portrait"){
+	  canvas.setAttribute('width', canvasWidth+10);
+	  canvas.setAttribute('height', canvasHeight);
+	  
+	  }
+	  redrawInterface("canvas");
+           
+          }
+    	    
+            ,
+            app.saveFile = async()=>{
+            try {
+                if (!app.file.handle){
+                   return await app.saveFileAs();
+	    }
+	    var dataarr=[pixelTexture,clickX,clickY,clickColor,clickSize,clickTool,clickDrag,canvasWidth,canvasHeight];
+	  var jsonContent = JSON.stringify(dataarr);
+	  var compressed = LZString.compressToUTF16(jsonContent);
+
+            gaEvent("FileAction", "Save"),
+                    await writeFile(app.file.handle, compressed),
+                    app.setModified(!1)
+                } catch (e) {
+                    gaEvent("Error", "FileSave", e.name),
+                    alert("Unable to save file" + e.name + e.message)
+                }
+                //app.setFocus()
+            }
+            ,
+            app.saveFileAs = async()=>{
+                if (!app.hasFSAccess)
+                    return gaEvent("FileAction", "Save As", "Legacy"),
+                    app.saveAsLegacy(app.file.name, app.getText()),
+                    void app.setFocus();
+                let e;
+                gaEvent("FileAction", "Save As", "FSAccess");
+                try {
+                    e = await getNewFileHandle()
+                } catch (e) {
+                    if ("AbortError" === e.name)
+                        return;
+                    return gaEvent("Error", "FileSaveAs1", e.name),
+                    void alert("An error occured trying to open the file.")
+                }
+            try {
+	    var dataarr=[pixelTexture, clickX,clickY,clickColor,clickSize,clickTool,clickDrag,canvasWidth,canvasHeight];
+	  var jsonContent = JSON.stringify(dataarr);
+	  var compressed = LZString.compressToUTF16(jsonContent);
+                    await writeFile(e, compressed),
+                    app.setFile(e),
+                    app.setModified(!1)
+                } catch (e) {
+                    return gaEvent("Error", "FileSaveAs2", e.name),
+            alert("Unable to save file 2." + e.name + e.message),
+	    console.log("Error", e.stack),
+    console.log("Error", e.name),
+    console.log("Error", e.message),
+                    void gaEvent("Error", "Unable to write file", "FSAccess")
+                }
+//                app.setFocus()
+            }
+            ,
+            app.quitApp = ()=>{
+                app.confirmDiscard() && (gaEvent("FileAction", "Quit"),
+                window.close())
+            }
+            ;
+        </script>
+       
+        <script>
+            "use strict";
+            function getFileHandle() {
+                return "showOpenFilePicker"in window ? window.showOpenFilePicker().then(e=>e[0]) : window.chooseFileSystemEntries()
+            }
+            function getNewFileHandle() {
+                if ("showSaveFilePicker"in window) {
+                    const e = {
+                        types: [{
+                            description: ".sense",
+                            accept: {
+                                "text/plain": [".sense"]
+                            }
+                        }]
+                    };
+                    return window.showSaveFilePicker(e)
+                }
+                return window.chooseFileSystemEntries({
+            type: "save-file",
+	    suggestedName: 'haptic-sketch.sense',
+                    accepts: [{
+                        description: ".sense",
+                        extensions: [".sense"],
+                        mimeTypes: ["text/plain"]
+                    }]
+                })
+            }
+            function readFile(e) {
+                return e.text ? e.text() : _readFileLegacy(e)
+            }
+            function _readFileLegacy(e) {
+                return new Promise(t=>{
+                    const i = new FileReader;
+                    i.addEventListener("loadend", e=>{
+                        const i = e.srcElement.result;
+                        t(i)
+                    }
+                    ),
+                    i.readAsText(e)
+                }
+                )
+            }
+            async function writeFile(e, t) {
+                if (e.createWriter) {
+                    const i = await e.createWriter();
+                    return await i.write(0, t),
+                    void await i.close()
+                }
+                const i = await e.createWritable();
+                await i.write(t),
+                await i.close()
+            }
+            async function verifyPermission(e, t) {
+                const i = {};
+                return t && (i.writable = !0,
+                i.mode = "readwrite"),
+                "granted" === await e.queryPermission(i) || "granted" === await e.requestPermission(i)
+            }
+        </script>
+        <script>
+            "use strict";
+            !function(e) {
+            document.getElementById("butNew").addEventListener("click", ()=>{
+            e.newFile()
+                }
+                ),
+                document.getElementById("butOpen").addEventListener("click", ()=>{
+            e.openFile()
+                }
+                ),
+                document.getElementById("butSave").addEventListener("click", ()=>{
+            e.saveFile()
+                }
+                ),
+                document.getElementById("butSaveAs").addEventListener("click", ()=>{
+            e.saveFileAs()
+                }
+                )
+            }(app);
+        </script>
+
+        <script>
+            "use strict";
+            !function(e) {
+                const t = document.getElementById("headerAppName")
+                  , n = document.getElementById("headerFileName")
+                  , d = document.getElementById("modifiedHeader")
+                  , i = document.getElementById("modifiedFooter");
+                window.addEventListener("beforeunload", t=>{
+                    e.file.isModified && (t.preventDefault(),
+                    t.returnValue = "There are unsaved changes. Are you sure you want to leave?")
+                }
+                ),
+                e.confirmDiscard = ()=>{
+                    if (!e.file.isModified)
+                        return !0;
+                    return confirm("Discard changes? All changes will be lost.")
+                }
+                ,
+                e.setFile = d=>{
+                    d && d.name ? (e.file.handle = d,
+                    e.file.name = d.name,
+                    document.title = `${d.name} - ${e.appName}`,
+                    n.textContent = d.name,
+                    t.classList.toggle("hidden", !1)
+                    ) : (e.file.handle = null,
+                    e.file.name = d,
+                    document.title = e.appName
+
+                    )
+                }
+                ,
+                e.setModified = t=>{
+                    if (!e.hasFSAccess)
+                        return;
+                    e.file.isModified = t,
+                    document.body.classList.toggle("modified", t);
+                    const n = !t;
+
+                }
+            }(app);
+        </script>
+       
+
+        <script>
+            "use strict";
+            !function(e) {
+                const t = document.getElementById("filePicker")
+                  , n = document.getElementById("aDownloadFile");
+                e.getFileLegacy = ()=>new Promise((e,n)=>{
+            t.onchange = c=>{
+                        const o = t.files[0];
+                        o ? e(o) : n(new Error("AbortError"))
+                    }
+                    ,
+                    t.click()
+                }
+                ),
+                e.saveAsLegacy = (e,t)=>{
+                    e = e || "Untitled.txt";
+                    const c = new File([t],"",{
+                        type: "text/plain"
+                    });
+                    n.href = window.URL.createObjectURL(c),
+                    n.setAttribute("download", e),
+                    n.click()
+                }
+            }(app);
+        </script>
+    </body>
+</html>

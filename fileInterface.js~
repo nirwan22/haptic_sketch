@@ -1,0 +1,269 @@
+
+"use strict";
+const app = {
+    appName: "Text Editor",
+    file: {
+        handle: null,
+        name: null,
+        isModified: !1
+    },
+    options: {
+        captureTabs: !0,
+        fontSize: 14,
+        monoSpace: !1,
+        wordWrap: !0
+    },
+    hasFSAccess: "chooseFileSystemEntries"in window || "showOpenFilePicker"in window,
+    isMac: navigator.userAgent.includes("Mac OS X")
+};
+
+app.hasFSAccess ? (document.getElementById("not-supported").classList.add("hidden"),
+		   gaEvent("File System APIs", "FSAccess")) : (document.getElementById("lblLegacyFS").classList.toggle("hidden", !1),
+							       document.getElementById("butSave").classList.toggle("hidden", !0),
+							       gaEvent("File System APIs", "Legacy")),
+app.newFile = ()=>{
+    app.confirmDiscard() && (app.setText(),
+			     app.setFile(),
+			     app.setModified(!1),
+			     app.setFocus(!0),
+			     gaEvent("FileAction", "New"))
+}
+,
+app.openFile = async e=>{
+    if (!app.confirmDiscard())
+        return;
+    if (!app.hasFSAccess) {
+        gaEvent("FileAction", "Open", "Legacy");
+        const e = await app.getFileLegacy();
+        return void (e && app.readFile(e))
+    }
+    if (e) {
+        if (gaEvent("FileAction", "OpenRecent", "FSAccess"),
+            !1 === await verifyPermission(e, !0))
+            return
+    } else {
+        gaEvent("FileAction", "Open", "FSAccess");
+        try {
+            e = await getFileHandle()
+        } catch (e) {
+            if ("AbortError" === e.name)
+                return;
+            gaEvent("Error", "FileOpen", e.name),
+            alert("An error occured trying to open the file.")
+        }
+    }
+    if (!e)
+        return;
+    const a = await e.getFile();
+    app.readFile(a, e)
+}
+,
+app.readFile = async(e,a)=>{
+    try {
+        app.setText(await readFile(e)),
+        app.setFile(a || e.name),
+        app.setModified(!1),
+        app.setFocus(!0)
+    } catch (e) {
+        gaEvent("Error", "FileRead", e.name);
+                    const a = `An error occured reading ${app.fileName}`;
+        alert(a)
+    }
+}
+,
+app.saveFile = async()=>{
+    try {
+        if (!app.file.handle)
+            return await app.saveFileAs();
+        gaEvent("FileAction", "Save"),
+        await writeFile(app.file.handle, app.getText()),
+        app.setModified(!1)
+    } catch (e) {
+        gaEvent("Error", "FileSave", e.name),
+        alert("Unable to save file")
+    }
+    app.setFocus()
+}
+,
+app.saveFileAs = async()=>{
+    if (!app.hasFSAccess)
+        return gaEvent("FileAction", "Save As", "Legacy"),
+    app.saveAsLegacy(app.file.name, app.getText()),
+    void app.setFocus();
+    let e;
+    gaEvent("FileAction", "Save As", "FSAccess");
+    try {
+        e = await getNewFileHandle()
+    } catch (e) {
+        if ("AbortError" === e.name)
+            return;
+        return gaEvent("Error", "FileSaveAs1", e.name),
+                    void alert("An error occured trying to open the file.")
+    }
+    try {
+        await writeFile(e, app.getText()),
+        app.setFile(e),
+        app.setModified(!1)
+    } catch (e) {
+        return gaEvent("Error", "FileSaveAs2", e.name),
+        alert("Unable to save file."),
+        void gaEvent("Error", "Unable to write file", "FSAccess")
+    }
+    app.setFocus()
+}
+,
+app.quitApp = ()=>{
+    app.confirmDiscard() && (gaEvent("FileAction", "Quit"),
+			     window.close())
+}
+;
+
+"use strict";
+const myMenus = {
+    setup: e=>{
+        const t = e.querySelector("button.menuTop");
+        t.addEventListener("click", ()=>{
+            myMenus._toggle(t)
+        }
+			  ),
+	
+    }
+    ,
+    
+    hide: e=>{
+        e.querySelector(".menuTop").setAttribute("aria-expanded", !1);
+        const t = e.querySelector(".menuItemContainer");
+        t && t.classList.toggle("hidden", !0)
+    }
+    ,
+    show: e=>{
+        myMenus.hideAll(),
+        e.querySelector(".menuTop").setAttribute("aria-expanded", !0);
+        const t = e.querySelector(".menuItemContainer");
+        t.classList.toggle("hidden", !1);
+        const n = t.querySelector("button");
+        if (!n)
+            return myMenus.hideAll(),
+        void app.setFocus();
+        n.focus()
+    }
+    ,
+    createButton: e=>{
+        const t = document.createElement("button");
+        return t.innerText = e,
+        t.setAttribute("type", "button"),
+        t.setAttribute("role", "menuitem"),
+        t
+    }
+    ,
+    addElement: (e,t)=>{
+        e.querySelector(".menuItemContainer").appendChild(t)
+    }
+    ,
+    clearMenu: e=>{
+        e.querySelector(".menuItemContainer").innerHTML = ""
+    }
+    ,
+    _toggle: e=>{
+        const t = e.parentElement;
+        "true" === e.getAttribute("aria-expanded") ? myMenus.hide(t) : myMenus.show(t)
+    }
+};
+app.isMac || (window.addEventListener("keydown", e=>{
+    !0 === e.altKey && "Alt" === e.key && document.body.classList.toggle("altKey", !0)
+}
+				     ),
+              window.addEventListener("keyup", e=>{
+                  "Alt" === e.key && document.body.classList.toggle("altKey", !1)
+              }
+				     ));
+
+
+
+function getFileHandle() {
+    return "showOpenFilePicker"in window ? window.showOpenFilePicker().then(e=>e[0]) : window.chooseFileSystemEntries()
+}
+function getNewFileHandle() {
+    if ("showSaveFilePicker"in window) {
+        const e = {
+            types: [{
+                description: "Text file",
+                accept: {
+                    "text/plain": [".txt"]
+                }
+            }]
+        };
+        return window.showSaveFilePicker(e)
+    }
+    return window.chooseFileSystemEntries({
+        type: "save-file",
+        accepts: [{
+            description: "Text file",
+            extensions: [".txt"],
+            mimeTypes: ["text/plain"]
+        }]
+    })
+}
+
+function readFile(e) {
+    return e.text ? e.text() : _readFileLegacy(e)
+}
+
+function _readFileLegacy(e) {
+    return new Promise(t=>{
+        const i = new FileReader;
+        i.addEventListener("loadend", e=>{
+            const i = e.srcElement.result;
+            t(i)
+        }
+			  ),
+        i.readAsText(e)
+    }
+                      )
+}
+
+async function writeFile(e, t) {
+    if (e.createWriter) {
+        const i = await e.createWriter();
+        return await i.write(0, t),
+        void await i.close()
+    }
+    const i = await e.createWritable();
+    await i.write(t),
+    await i.close()
+}
+
+async function verifyPermission(e, t) {
+    const i = {};
+    return t && (i.writable = !0,
+                 i.mode = "readwrite"),
+    "granted" === await e.queryPermission(i) || "granted" === await e.requestPermission(i)
+}
+
+
+!function(e) {
+    const t = document.getElementById("menuFile");
+    myMenus.setup(t),
+    document.getElementById("butNew").addEventListener("click", ()=>{
+        myMenus.hide(t),
+        e.newFile()
+    }
+						      ),
+    document.getElementById("butOpen").addEventListener("click", ()=>{
+        myMenus.hide(t),
+        e.openFile()
+    }
+						       ),
+    document.getElementById("butSave").addEventListener("click", ()=>{
+        myMenus.hide(t),
+        e.saveFile()
+    }
+						       ),
+    document.getElementById("butSaveAs").addEventListener("click", ()=>{
+        myMenus.hide(t),
+        e.saveFileAs()
+    }
+						 ),
+    
+
+}(app);
